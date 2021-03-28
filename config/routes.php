@@ -50,13 +50,29 @@ $routes->scope('/', function (RouteBuilder $builder) {
      * its action called 'display', and we pass a param to select the view file
      * to use (in this case, templates/Pages/home.php)...
      */
-    $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
+    $builder->connect('/', ['controller' => 'Pages', 'action' => 'index'], ['_name' => 'home']);
 
     /*
      * ...and connect the rest of 'Pages' controller's URLs.
      */
-    $builder->connect('/pages/*', 'Pages::display');
+    $builder->connect('/page/{pageNo}', ['controller' => 'Pages', 'action' => 'index'], ['_name' => 'listPage'])
+        ->setPatterns(['pageNo' => '\d+'])
+        ->setPass(['pageNo']);
 
+    $builder->connect('/detail/{id}', ['controller' => 'Pages', 'action' => 'detail'], ['_name' => 'detail'])
+    ->setPatterns(['id' => '\d+'])
+    ->setPass(['id']);
+
+
+    $builder->connect('/delete/{id}', ['controller' => 'Pages', 'action' => 'delete'], ['_name' => 'delete'])
+        ->setPatterns(['id' => '\d+'])
+        ->setPass(['id']);
+
+    $builder->connect('/edit/{id}', ['controller' => 'Pages', 'action' => 'edit'], ['_name' => 'edit'])
+        ->setPatterns(['id' => '\d+'])
+        ->setPass(['id']);
+
+    $builder->connect('/mrr', ['controller' => 'Pages', 'action' => 'mrr'], ['_name' => 'mrr']);
     /*
      * Connect catchall routes for all controllers.
      *
@@ -80,10 +96,10 @@ $routes->scope('/', function (RouteBuilder $builder) {
  * ```
  * $routes->scope('/api', function (RouteBuilder $builder) {
  *     // No $builder->applyMiddleware() here.
- *     
+ *
  *     // Parse specified extensions from URLs
  *     // $builder->setExtensions(['json', 'xml']);
- *     
+ *
  *     // Connect API actions here.
  * });
  * ```
