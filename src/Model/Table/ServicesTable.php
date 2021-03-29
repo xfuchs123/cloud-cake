@@ -2,6 +2,7 @@
 
 namespace App\Model\Table;
 
+use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -18,6 +19,10 @@ class ServicesTable extends Table
                 ]
             ]
         ]);
+        $this->belongsTo('Currencies')
+            ->setForeignKey('currency');
+        $this->belongsTo('BillingPeriods')
+            ->setForeignKey('billing_period');
     }
 
     public function validationDefault(Validator $validator): Validator
@@ -41,17 +46,6 @@ class ServicesTable extends Table
                 return !empty($value);
             }
         ])
-            ->add('billing_period', 'valid_period', [
-                'rule' => function($value,array $context){
-                    if(empty($value)){
-                        return 'Billing period cannot be empty';
-                    }
-                    if (in_array($value, ['monthly', 'quarterly', 'bi-yearly', 'yearly'])) {
-                        return true;
-                    }
-                    return 'Please select a valid billing option';
-                }
-            ])
             ->add('unit_cost',[
                 'numeric' => [
                     'rule' => ['numeric'],
@@ -83,6 +77,7 @@ class ServicesTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('currency', 'Currencies'), ['message' => 'Please select a valid currency']);
+        $rules->add($rules->existsIn('billing_period', 'BillingPeriods'), ['message' => 'Please select a valid billing period']);
 
         return $rules;
     }

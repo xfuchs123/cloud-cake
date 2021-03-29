@@ -34,6 +34,7 @@ require CORE_PATH . 'config' . DS . 'bootstrap.php';
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\Database\Type;
 use Cake\Datasource\ConnectionManager;
 use Cake\Error\ConsoleErrorHandler;
 use Cake\Error\ErrorHandler;
@@ -43,6 +44,7 @@ use Cake\Mailer\Mailer;
 use Cake\Mailer\TransportFactory;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
+use Detection\MobileDetect;
 
 /*
  * See https://github.com/josegonzalez/php-dotenv for API details.
@@ -167,12 +169,12 @@ Security::setSalt(Configure::consume('Security.salt'));
  * Setup detectors for mobile and tablet.
  */
 ServerRequest::addDetector('mobile', function ($request) {
-    $detector = new \Detection\MobileDetect();
+    $detector = new MobileDetect();
 
     return $detector->isMobile();
 });
 ServerRequest::addDetector('tablet', function ($request) {
-    $detector = new \Detection\MobileDetect();
+    $detector = new MobileDetect();
 
     return $detector->isTablet();
 });
@@ -203,6 +205,11 @@ ServerRequest::addDetector('tablet', function ($request) {
 //    ->useMutable();
 // TypeFactory::build('timestamptimezone')
 //    ->useMutable();
+
+Type::build('datetime')->useImmutable();
+Type::build('date')->useImmutable();
+Type::build('time')->useImmutable();
+Type::build('timestamp')->useImmutable();
 
 /*
  * Custom Inflector rules, can be set to correctly pluralize or singularize

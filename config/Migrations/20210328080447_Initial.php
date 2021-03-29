@@ -14,7 +14,7 @@ class Initial extends AbstractMigration
      * https://book.cakephp.org/phinx/0/en/migrations.html#the-up-method
      * @return void
      */
-    public function up()
+    public function up(): void
     {
         $this->table('currencies')
             ->addColumn('id', 'integer', [
@@ -94,6 +94,52 @@ class Initial extends AbstractMigration
 
         $this->table('currencies')->insert($rows)->save();
 
+        $this->table('billing_periods')
+            ->addColumn('id', 'integer', [
+                'autoIncrement' => true,
+                'default' => null,
+                'limit' => null,
+                'null' => false,
+                'signed' => false,
+            ])
+            ->addPrimaryKey(['id'])
+            ->addColumn('type', 'string', [
+                'default' => null,
+                'limit' => 255,
+                'null' => false,
+            ])
+            ->addColumn('to_monthly_exchange', 'decimal', [
+                'default' => '1.00',
+                'null' => false,
+                'precision' => 10,
+                'scale' => 5,
+                'signed' => false,
+            ])
+        ->create();
+        $rows = [
+            [
+                'id' => 1,
+                'type' => 'monthly',
+                'to_monthly_exchange' => 1.00,
+            ],
+            [
+                'id' => 2,
+                'type' => 'quarterly',
+                'to_monthly_exchange' => 0.25,
+            ],
+            [
+                'id' => 3,
+                'type' => 'bi-yearly',
+                'to_monthly_exchange' => 0.16666,
+            ],
+            [
+                'id' => 4,
+                'type' => 'yearly',
+                'to_monthly_exchange' => 0.08333,
+            ]
+        ];
+        $this->table('billing_periods')->insert($rows)->save();
+
         $this->table('services')
             ->addColumn('id', 'integer', [
                 'autoIncrement' => true,
@@ -115,11 +161,11 @@ class Initial extends AbstractMigration
                 'scale' => 2,
                 'signed' => false,
             ])
-            ->addColumn('billing_period', 'enum', [
+            ->addColumn('billing_period', 'integer', [
                 'default' => null,
                 'limit' => null,
                 'null' => false,
-                'values' => ['monthly','quarterly','bi-yearly','yearly'],
+                'signed' => false,
             ])
             ->addColumn('valid_from', 'date', [
                 'default' => null,
@@ -146,6 +192,7 @@ class Initial extends AbstractMigration
             ->addIndex(
                 [
                     'currency',
+                    'billing_period'
                 ]
             )
             ->create();
@@ -154,6 +201,15 @@ class Initial extends AbstractMigration
             ->addForeignKey(
                 'currency',
                 'currencies',
+                'id',
+                [
+                    'update' => 'CASCADE',
+                    'delete' => 'CASCADE',
+                ]
+            )
+            ->addForeignKey(
+                'billing_period',
+                'billing_periods',
                 'id',
                 [
                     'update' => 'CASCADE',
@@ -170,14 +226,16 @@ class Initial extends AbstractMigration
      * https://book.cakephp.org/phinx/0/en/migrations.html#the-down-method
      * @return void
      */
-    public function down()
+    public function down(): void
     {
         $this->table('services')
             ->dropForeignKey(
-                'currency'
+                ['currency','billing_period']
             )->save();
         $this->execute('DELETE FROM currencies');
-        $this->table('currencies')->drop()->save();
+        $this->execute('DELETE FROM billing_periods');
         $this->table('services')->drop()->save();
+        $this->table('currencies')->drop()->save();
+        $this->table('billing_periods')->drop()->save();
     }
 }

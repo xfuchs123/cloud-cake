@@ -16,10 +16,15 @@ declare(strict_types=1);
  */
 namespace App\Controller;
 
+use App\Form\MrrForm;
 use Cake\Core\Configure;
+use Cake\Database\Expression\QueryExpression;
+use Cake\Datasource\Exception\RecordNotFoundException;
+use Cake\Http\Client\Exception\RequestException;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
+use Cake\ORM\Query;
 use Cake\View\Exception\MissingTemplateException;
 
 /**
@@ -31,6 +36,159 @@ use Cake\View\Exception\MissingTemplateException;
  */
 class PagesController extends AppController
 {
+    public $paginate = [
+        'contain' => ['Currencies','BillingPeriods'],
+        'limit' => 5,
+        'order' => [
+            'Services.created' => 'asc'
+        ],
+
+    ];
+
+
+
+    public function initialize(): void
+    {
+        parent::initialize();
+
+        $this->loadComponent('Paginator');
+    }
+
+    public function index(?int $pageNo = 0): void
+    {
+        $this->loadModel('Services');
+
+        $paginateOpts =  [
+            'contain' => ['Currencies', 'BillingPeriods'],
+            'limit' => 5,
+            'order' => [
+                'Services.created' => 'asc'
+            ],
+
+        ];
+
+        $this->set('services', $this->paginate($this->Services->find(), $paginateOpts));
+    }
+
+    /**
+     * @param $serviceId
+     * @return Response|null
+     */
+    public function delete($serviceId): ?Response
+    {
+        $this->loadModel('Services');
+        try{
+            $entity = $this->Services->get($serviceId);
+            $this->Services->delete($entity);
+            $this->Flash->success('Service was deleted successfully');
+        } catch (RecordNotFoundException $exception) {
+            $this->Flash->error('Couldnt delete the service because the service was not found');
+        }
+        return $this->redirect('/');
+
+    }
+
+    public function edit($serviceId)
+    {
+        $this->loadModel('Services');
+        $this->set('billing_periods', $this->loadModel('BillingPeriods')->find()->select(['id','type'])->all());
+        $this->set('currencies', $this->loadModel('Currencies')->find()->select(['id','name'])->all());
+        $updateService = $this->Services->get($serviceId);
+
+        if (!empty($this->request->getData()))
+        {
+            $updateService = $this->Services->patchEntity($updateService, $this->request->getData(), ['associated' => ['Currencies', 'BillingPeriods']]);
+            if ($updateService->getErrors() || (!$this->Services->save($updateService)))
+            {
+                $this->Flash->error('There was one or more errors in your input. Please check them and try again.');
+                $this->set('values',$this->request->getData());
+                $this->set('errors', $updateService->getErrors());
+
+                return;
+            }
+
+            $this->Flash->success('Service saved successfully');
+            $this->redirect('/');
+        }
+
+        $this->set('values',[]);
+        $this->set('errors', []);
+
+    }
+
+    public function new(): void
+    {
+        $this->loadModel('Services');
+        $this->set('billing_periods', $this->loadModel('BillingPeriods')->find()->select(['id','type'])->all());
+        $this->set('currencies', $this->loadModel('Currencies')->find()->select(['id','name'])->all());
+
+        if (!empty($this->request->getData()))
+        {
+            $newService = $this->Services->newEntity($this->request->getData(), ['associated' => ['Currencies', 'BillingPeriods']]);
+            if ($newService->getErrors() || (!$this->Services->save($newService)))
+            {
+                $this->Flash->error('There was one or more errors in your input. Please check them and try again.');
+                $this->set('values',$this->request->getData());
+                $this->set('errors', $newService->getErrors());
+
+                return;
+            }
+
+            $this->Flash->success('Service saved successfully');
+            $this->redirect('/');
+        }
+
+        $this->set('values',[]);
+        $this->set('errors', []);
+
+    }
+
+    /**
+     * @param $serviceId
+     */
+    public function detail($serviceId): void
+    {
+        $this->loadModel('Services');
+        $service = $this->Services->get($serviceId, ['contain' => ['Currencies', 'BillingPeriods']]);
+        $this->set('service', $service);
+    }
+
+    public function mrr()
+    {
+        $mrrForm = new MrrForm();
+
+        if ($this->request->is('post')) {
+            if ($mrrForm->execute($this->request->getData()) && !$mrrForm->getErrors())
+            {
+                $this->loadModel('Services');
+                $date = $mrrForm->getData('date');
+                /** @var Query $query */
+                $query = $this->Services->find()->contain(['Currencies','BillingPeriods']);
+
+                $query->select(['bill' => $query->func()->sum(
+                    'Currencies.eur_exchange_rate * BillingPeriods.to_monthly_exchange * unit_cost'
+                )]);
+
+                $query->where(function(QueryExpression $exp, Query $q) use ($date){
+                    $orConditions = $exp->or(function (QueryExpression $or) use ($date){
+                        return $or->isNull('valid_to')
+                            ->lte('valid_to', $date);
+                    });
+                    return $exp->add($orConditions)->gte('valid_from', $date);
+                });
+
+                $this->set('bill', !is_null($query->first()->get('bill'))?:0);
+            } else {
+                $this->set('errors', $mrrForm->getErrors());
+                $this->Flash->error('There was error in your input...');
+            }
+
+        }
+
+        $this->set('mrrForm',$mrrForm);
+
+    }
+
     /**
      * Displays a view
      *
