@@ -9,11 +9,11 @@ class Service extends Entity
     protected $_accessible = [
         'name' => true,
         'unit_cost' => true,
-        'billing_period' => true,
+        'billing_period_id' => true,
         'valid_from' => true,
         'valid_to' => true,
         'notes' => true,
-        'currency' => true,
+        'currency_id' => true,
     ];
 
 }

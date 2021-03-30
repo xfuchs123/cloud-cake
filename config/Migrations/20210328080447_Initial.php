@@ -161,7 +161,7 @@ class Initial extends AbstractMigration
                 'scale' => 2,
                 'signed' => false,
             ])
-            ->addColumn('billing_period', 'integer', [
+            ->addColumn('billing_period_id', 'integer', [
                 'default' => null,
                 'limit' => null,
                 'null' => false,
@@ -183,7 +183,7 @@ class Initial extends AbstractMigration
                 'limit' => null,
                 'null' => true,
             ])
-            ->addColumn('currency', 'integer', [
+            ->addColumn('currency_id', 'integer', [
                 'default' => null,
                 'limit' => null,
                 'null' => false,
@@ -191,15 +191,15 @@ class Initial extends AbstractMigration
             ])
             ->addIndex(
                 [
-                    'currency',
-                    'billing_period'
+                    'currency_id',
+                    'billing_period_id'
                 ]
             )
             ->create();
 
         $this->table('services')
             ->addForeignKey(
-                'currency',
+                'currency_id',
                 'currencies',
                 'id',
                 [
@@ -208,7 +208,7 @@ class Initial extends AbstractMigration
                 ]
             )
             ->addForeignKey(
-                'billing_period',
+                'billing_period_id',
                 'billing_periods',
                 'id',
                 [
@@ -230,7 +230,7 @@ class Initial extends AbstractMigration
     {
         $this->table('services')
             ->dropForeignKey(
-                ['currency','billing_period']
+                ['currency_id','billing_period_id']
             )->save();
         $this->execute('DELETE FROM currencies');
         $this->execute('DELETE FROM billing_periods');

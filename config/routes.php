@@ -50,14 +50,6 @@ $routes->scope('/', function (RouteBuilder $builder) {
      * its action called 'display', and we pass a param to select the view file
      * to use (in this case, templates/Pages/home.php)...
      */
-    $builder->connect('/', ['controller' => 'Pages', 'action' => 'index'], ['_name' => 'home']);
-
-    /*
-     * ...and connect the rest of 'Pages' controller's URLs.
-     */
-    $builder->connect('/page/{pageNo}', ['controller' => 'Pages', 'action' => 'index'], ['_name' => 'listPage'])
-        ->setPatterns(['pageNo' => '\d+'])
-        ->setPass(['pageNo']);
 
     $builder->connect('/detail/{id}', ['controller' => 'Pages', 'action' => 'detail'], ['_name' => 'detail'])
     ->setPatterns(['id' => '\d+'])
@@ -72,9 +64,8 @@ $routes->scope('/', function (RouteBuilder $builder) {
         ->setPatterns(['id' => '\d+'])
         ->setPass(['id']);
 
-    $builder->connect('/new',['controller' => 'Pages', 'action' => 'new'], ['_name' => 'new']);
-
     $builder->connect('/mrr', ['controller' => 'Pages', 'action' => 'mrr'], ['_name' => 'mrr']);
+    $builder->connect('/', ['controller' => 'Pages', 'action' => 'index']);
     /*
      * Connect catchall routes for all controllers.
      *
