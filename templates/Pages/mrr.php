@@ -15,7 +15,7 @@ $this->start('nav');
         </h1>
     </div>
         <hr>
-        <?= $this->Form->create($mrr) ?>
+        <?= $this->Form->create() ?>
         <?= $this->Form->control('date')?>
         <?php if (!empty($errors)): ?>
         <?php foreach ($errors['date'] as $error): ?>
